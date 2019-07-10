@@ -1,0 +1,26 @@
+{
+    "name": "programic/ecli-service",
+    "license": "proprietary",
+    "type": "package",
+    "description": "Den Hollander Platform",
+    "readme": "README.md",
+    "authors": [
+        {
+            "name": "Programic",
+            "email": "development@programic.com",
+            "homepage": "https://programic.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "guzzlehttp/guzzle": "~6.0"
+    },
+    "require-dev": {
+
+    },
+    "autoload": {
+        "psr-4": {
+            "Programic\\EcliService\\": "src/"
+        }
+    }
+}
