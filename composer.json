@@ -2,7 +2,7 @@
     "name": "programic/ecli-service",
     "license": "proprietary",
     "type": "package",
-    "description": "Den Hollander Platform",
+    "description": "Interface for fetching data from rechtspraak.nl",
     "readme": "README.md",
     "authors": [
         {
