@@ -10,6 +10,10 @@ class Client
     protected $client = null;
     protected $baseUrl = 'https://data.rechtspraak.nl/uitspraken/';
 
+    /**
+     * Client constructor.
+     * @param array $config
+     */
     public function __construct(array $config = [])
     {
         $baseConfig = [
@@ -24,45 +28,68 @@ class Client
         return $this;
     }
 
+    /**
+     * Fetch all organizations (Instanties)
+     * @return array
+     */
     public function organizations()
     {
         $body = $this->getXmlBody('/Waardelijst/Instanties');
         $resultSet = [];
 
-        foreach ($body->Instantie as $item) {
-            $organization = Resource\Organization::create($item);
-            $resultSet[] = $organization;
+        if (!empty($body) && !empty($body->Instantie)) {
+            foreach ($body->Instantie as $item) {
+                $organization = Resource\Organization::create($item);
+                $resultSet[] = $organization;
+            }
         }
 
         return $resultSet;
     }
 
+    /**
+     * Fetch all jurisdictions (Rechtsgebieden)
+     * @return Resource\Jurisdiction
+     */
     public function jurisdictions()
     {
         $body = $this->getXmlBody('/Waardelijst/Rechtsgebieden');
         $resultSet = [];
 
-        foreach ($body->Rechtsgebied as $item) {
-            $jurisdiction = Resource\Jurisdiction::create($item);
-            $resultSet[] = $jurisdiction;
+        if (!empty($body) && !empty($body->Rechtsgebied)) {
+            foreach ($body->Rechtsgebied as $item) {
+                $jurisdiction = Resource\Jurisdiction::create($item);
+                $resultSet[] = $jurisdiction;
+            }
         }
 
         return $resultSet;
     }
 
+    /**
+     * Fetch all procedureTypes (Procedure soorten)
+     * @return Resource\ProcedureType[]
+     */
     public function procedureTypes()
     {
         $body = $this->getXmlBody('/Waardelijst/Proceduresoorten');
         $resultSet = [];
 
-        foreach ($body->Proceduresoort as $item) {
-            $procedureType = Resource\ProcedureType::create($item);
-            $resultSet[] = $procedureType;
+        if (!empty($body) && !empty($body->Proceduresoort)) {
+            foreach ($body->Proceduresoort as $item) {
+                $procedureType = Resource\ProcedureType::create($item);
+                $resultSet[] = $procedureType;
+            }
         }
 
         return $resultSet;
     }
 
+    /**
+     * Get the metadata from an ECLI-number
+     * @param string $ecliNumber
+     * @return bool|Resource\EcliMetaData
+     */
     public function getEcliMetaData(string $ecliNumber)
     {
         $body = $this->getXmlBody('content?id='. $ecliNumber . '&return=META');
@@ -71,14 +98,31 @@ class Client
         if (!empty($body->children($namespaces['rdf']))) {
             $rdf = $body->children($namespaces['rdf'])->RDF;
             $xmlDescription = $rdf->Description[0];
-
         }
         $metaData = $xmlDescription->children($namespaces['dcterms']);
-        $resource = Resource\EcliMetaData::create($metaData);
+        if (!empty($metaData)) {
+            $resource = Resource\EcliMetaData::create($metaData);
+        } else {
+            $resource = false;
+        }
 
         return $resource;
     }
 
+    /**
+     * Verify if an ECLI-number is valid
+     * @param string $ecliNumber
+     * @return bool
+     */
+    public function ecliExists(string $ecliNumber)
+    {
+        return $this->getEcliMetaData($ecliNumber) !== false;
+    }
+
+    /**
+     * @param string $uri
+     * @return bool|\SimpleXMLElement
+     */
     protected function getXmlBody(string $uri)
     {
         $response = $this->client->get($uri);
