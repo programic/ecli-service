@@ -93,6 +93,9 @@ class Client
     public function getEcliMetaData(string $ecliNumber)
     {
         $body = $this->getXmlBody('content?id='. $ecliNumber . '&return=META');
+        if ($body === false) {
+            return false;
+        }
         $namespaces = $body->getNamespaces(true);
 
         if (!empty($body->children($namespaces['rdf']))) {
@@ -127,7 +130,7 @@ class Client
     {
         $response = $this->client->get($uri);
 
-        if ($response->getStatusCode() !== 200) {
+        if ($response->getStatusCode() !== 200 || $response->getHeaderLine('Content-Type') === 'text/html; charset=utf-8') {
             return false;
         }
 
