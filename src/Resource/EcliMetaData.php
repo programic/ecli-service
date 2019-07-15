@@ -7,6 +7,15 @@ use \SimpleXMLElement;
 class EcliMetaData
 {
     protected $identifier = null;
+    protected $modified = null;
+    protected $issued = null;
+    protected $publisher = null;
+    protected $creator = null;
+    protected $date = null;
+    protected $type = null;
+    protected $subject = null;
+    protected $relation = [];
+    protected $references = [];
 
     public function __construct(SimpleXMLElement $element)
     {
