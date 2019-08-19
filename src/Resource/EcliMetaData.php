@@ -44,4 +44,20 @@ class EcliMetaData
     {
         return $this->{$name};
     }
+
+    public function toArray()
+    {
+        return [
+            'identifier' => $this->identifier,
+            'modified' => $this->modified,
+            'issued' => $this->issued,
+            'publisher' => $this->publisher,
+            'creator' => $this->creator,
+            'date' => $this->date,
+            'type' => $this->type,
+            'subject' => $this->subject,
+            'relation' => $this->relation,
+            'references' => $this->references,
+        ];
+    }
 }
