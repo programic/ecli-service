@@ -30,8 +30,10 @@ $client = new Client();
 ### organizations
 Returns an array with instances of Resource\Organization
 
+if parameter `onlyActive` is set to false, also inactive organizations will be returned.
+
 ```php
-$results = $client->organizations();
+$results = $client->organizations(true);
 $organization = $results[0];
 
 $organization->name;

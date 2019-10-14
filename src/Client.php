@@ -30,9 +30,10 @@ class Client
 
     /**
      * Fetch all organizations (Instanties)
+     * @param bool $onlyActive
      * @return array
      */
-    public function organizations()
+    public function organizations(bool $onlyActive = true)
     {
         $body = $this->getXmlBody('/Waardelijst/Instanties');
         $resultSet = [];
@@ -40,6 +41,9 @@ class Client
         if (!empty($body) && !empty($body->Instantie)) {
             foreach ($body->Instantie as $item) {
                 $organization = Resource\Organization::create($item);
+                if ($onlyActive && is_null($organization->endDate) === false) {
+                    continue;
+                }
                 $resultSet[] = $organization;
             }
         }
