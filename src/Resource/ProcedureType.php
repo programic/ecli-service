@@ -28,4 +28,12 @@ class ProcedureType
     {
         return $this->{$name};
     }
+
+    public function toArray()
+    {
+        return [
+            'name' => $this->name,
+            'identifier' => $this->identifier,
+        ];
+    }
 }

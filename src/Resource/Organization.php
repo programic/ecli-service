@@ -38,4 +38,16 @@ class Organization
     {
         return $this->{$name};
     }
+
+    public function toArray()
+    {
+        return [
+            'name' => $this->name,
+            'type' => $this->type,
+            'abbreviation' => $this->abbreviation,
+            'identifier' => $this->identifier,
+            'startDate' => $this->startDate,
+            'endDate' => $this->endDate,
+        ];
+    }
 }
