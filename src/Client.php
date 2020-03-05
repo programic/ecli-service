@@ -4,7 +4,6 @@ namespace Programic\EcliService;
 
 use GuzzleHttp\Client as GuzzleClient;
 
-
 class Client
 {
     protected $client = null;
@@ -33,7 +32,7 @@ class Client
      * @param bool $onlyActive
      * @return array
      */
-    public function organizations(bool $onlyActive = true)
+    public function organizations($onlyActive = true)
     {
         $body = $this->getXmlBody('/Waardelijst/Instanties');
         $resultSet = [];
@@ -53,7 +52,7 @@ class Client
 
     /**
      * Fetch all jurisdictions (Rechtsgebieden)
-     * @return Resource\Jurisdiction
+     * @return array
      */
     public function jurisdictions()
     {
@@ -92,11 +91,13 @@ class Client
     /**
      * Get the metadata from an ECLI-number
      * @param string $ecliNumber
+     * @param bool $metaOnly
      * @return bool|Resource\EcliMetaData
      */
-    public function getEcliMetaData(string $ecliNumber)
+    public function getEcliMetaData(string $ecliNumber, $metaOnly = false)
     {
-        $body = $this->getXmlBody('content?id='. $ecliNumber . '&return=META');
+        $metaParams = ($metaOnly) ? '&return=META' : '';
+        $body = $this->getXmlBody('content?id='. $ecliNumber . $metaParams);
         if ($body === false) {
             return false;
         }
@@ -106,9 +107,22 @@ class Client
             $rdf = $body->children($namespaces['rdf'])->RDF;
             $xmlDescription = $rdf->Description[0];
         }
-        $metaData = $xmlDescription->children($namespaces['dcterms']);
-        if (!empty($metaData)) {
-            $resource = Resource\EcliMetaData::create($metaData);
+        $xmlData = $xmlDescription->children($namespaces['dcterms']);
+
+        $verdicts = $body->children("http://www.rechtspraak.nl/schema/rechtspraak-1.0");
+
+        $decision = [];
+        if ($verdicts->inhoudsindicatie) {
+            $decision = $this->xmlObjToArr($verdicts->inhoudsindicatie);
+        }
+
+        $verdict = [];
+        if ($verdicts->uitspraak) {
+            $verdict = $this->xmlObjToArr($verdicts->uitspraak);
+        }
+
+        if (!empty($xmlData)) {
+            $resource = Resource\EcliMetaData::create($xmlData, $decision, $verdict);
         } else {
             $resource = false;
         }
@@ -142,4 +156,52 @@ class Client
 
         return $body;
     }
+
+    public function xmlObjToArr($obj) {
+        $namespace = $obj->getDocNamespaces(true);
+        $namespace[NULL] = NULL;
+
+        $children = array();
+        $attributes = array();
+        $name = strtolower((string)$obj->getName());
+
+        $text = trim((string)$obj);
+        if( strlen($text) <= 0 ) {
+            $text = NULL;
+        }
+
+        // get info for all namespaces
+        if(is_object($obj)) {
+            foreach( $namespace as $ns=>$nsUrl ) {
+                // atributes
+                $objAttributes = $obj->attributes($ns, true);
+                foreach( $objAttributes as $attributeName => $attributeValue ) {
+                    $attribName = strtolower(trim((string)$attributeName));
+                    $attribVal = trim((string)$attributeValue);
+                    if (!empty($ns)) {
+                        $attribName = $ns . ':' . $attribName;
+                    }
+                    $attributes[$attribName] = $attribVal;
+                }
+
+                // children
+                $objChildren = $obj->children($ns, true);
+                foreach( $objChildren as $childName=>$child ) {
+                    $childName = strtolower((string)$childName);
+                    if( !empty($ns) ) {
+                        $childName = $ns.':'.$childName;
+                    }
+                    $children[$childName][] = $this->xmlObjToArr($child);
+                }
+            }
+        }
+
+        return [
+            'name' => $name,
+            'text' => $text,
+            'attributes' => $attributes,
+            'children' => $children,
+        ];
+    }
+
 }
