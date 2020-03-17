@@ -20,8 +20,9 @@ class EcliMetaData
     protected $references = [];
     protected $decision = [];
     protected $verdict = [];
+    protected $source = null;
 
-    public function __construct(SimpleXMLElement $element, $decision, $verdict)
+    public function __construct(SimpleXMLElement $element, $decision, $verdict, $source)
     {
         $this->identifier = (string) $element->identifier;
         $this->modified = (string) $element->modified;
@@ -37,13 +38,14 @@ class EcliMetaData
         $this->references = (array) $element->references;
         $this->decision = (array) $decision;
         $this->verdict = (array) $verdict;
+        $this->source = $source;
 
         return $this;
     }
 
-    public static function create(SimpleXMLElement $element, $decision, $verdict)
+    public static function create(SimpleXMLElement $element, $decision, $verdict, $source)
     {
-        return new self($element, $decision, $verdict);
+        return new self($element, $decision, $verdict, $source);
     }
 
     public function __get($name)
@@ -51,9 +53,14 @@ class EcliMetaData
         return $this->{$name};
     }
 
+    public function __set($name, $value)
+    {
+        $this->{$name} = $value;
+    }
+
     public function toArray()
     {
-        return [
+        $data = [
             'identifier' => $this->identifier,
             'modified' => $this->modified,
             'issued' => $this->issued,
@@ -69,5 +76,11 @@ class EcliMetaData
             'decision' => $this->decision,
             'verdict' => $this->verdict,
         ];
+
+        if ($this->source) {
+            $data['source'] = $this->source;
+        }
+
+        return $data;
     }
 }

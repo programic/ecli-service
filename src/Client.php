@@ -94,10 +94,13 @@ class Client
      * @param bool $metaOnly
      * @return bool|Resource\EcliMetaData
      */
-    public function getEcliMetaData(string $ecliNumber, $metaOnly = false)
+    public function getEcliMetaData(string $ecliNumber, $metaOnly = false, $includeSource = false)
     {
         $metaParams = ($metaOnly) ? '&return=META' : '';
-        $body = $this->getXmlBody('content?id='. $ecliNumber . $metaParams);
+        $body = $this->getXmlBody('content?id='. $ecliNumber . $metaParams, false);
+        $rawBody = $body;
+        $body = simplexml_load_string($body);
+
         if ($body === false) {
             return false;
         }
@@ -122,7 +125,10 @@ class Client
         }
 
         if (!empty($xmlData)) {
-            $resource = Resource\EcliMetaData::create($xmlData, $decision, $verdict);
+            if ($includeSource) {
+                $includeSource = $body;
+            }
+            $resource = Resource\EcliMetaData::create($xmlData, $decision, $verdict, $includeSource);
         } else {
             $resource = false;
         }
@@ -144,7 +150,7 @@ class Client
      * @param string $uri
      * @return bool|\SimpleXMLElement
      */
-    protected function getXmlBody(string $uri)
+    protected function getXmlBody(string $uri, $asSimpleXML = true)
     {
         $response = $this->client->get($uri);
 
@@ -152,7 +158,11 @@ class Client
             return false;
         }
 
-        $body = simplexml_load_string($response->getBody());
+        $body = $response->getBody();
+        if ($asSimpleXML) {
+            $body = simplexml_load_string($body);
+        }
+
 
         return $body;
     }
