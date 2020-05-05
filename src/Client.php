@@ -99,8 +99,6 @@ class Client
     {
         $metaParams = ($metaOnly) ? '&return=META' : '';
         $body = $this->getXmlBody('content?id='. $ecliNumber . $metaParams, false);
-
-        dd((string) $body);
         $body = simplexml_load_string($body);
 
         if ($body === false) {
@@ -120,7 +118,6 @@ class Client
         $xmlDataPsi = (array) $xmlDescription->children($namespaces['psi']);
         $versions = (array) $dcTerms->hasVersion->children($namespaces['rdf'])->list->li;
         $xmlData = array_merge($xmlData, $xmlDataPsi, ['versions' => $versions]);
-
 
         $verdicts = $body->children("http://www.rechtspraak.nl/schema/rechtspraak-1.0");
 

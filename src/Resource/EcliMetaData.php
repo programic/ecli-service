@@ -33,7 +33,13 @@ class EcliMetaData
 
     public function toArray()
     {
-        return $this->data;
+        return array_map(function ($value) {
+            if (is_array($value)) {
+                return $value;
+            }
+
+            return (string) $value;
+        }, $this->data);
     }
 
     private function getEcliOrganizationType($ecliValue)
