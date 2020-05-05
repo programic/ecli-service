@@ -92,13 +92,15 @@ class Client
      * Get the metadata from an ECLI-number
      * @param string $ecliNumber
      * @param bool $metaOnly
+     * @param bool $includeSource
      * @return bool|Resource\EcliMetaData
      */
     public function getEcliMetaData(string $ecliNumber, $metaOnly = false, $includeSource = false)
     {
         $metaParams = ($metaOnly) ? '&return=META' : '';
         $body = $this->getXmlBody('content?id='. $ecliNumber . $metaParams, false);
-        $rawBody = $body;
+
+        dd((string) $body);
         $body = simplexml_load_string($body);
 
         if ($body === false) {
@@ -110,25 +112,31 @@ class Client
             $rdf = $body->children($namespaces['rdf'])->RDF;
             $xmlDescription = $rdf->Description[0];
         }
-        $xmlData = $xmlDescription->children($namespaces['dcterms']);
+
+        $dcTerms = $xmlDescription->children($namespaces['dcterms']);
+
+
+        $xmlData = (array) $dcTerms;
+        $xmlDataPsi = (array) $xmlDescription->children($namespaces['psi']);
+        $versions = (array) $dcTerms->hasVersion->children($namespaces['rdf'])->list->li;
+        $xmlData = array_merge($xmlData, $xmlDataPsi, ['versions' => $versions]);
+
 
         $verdicts = $body->children("http://www.rechtspraak.nl/schema/rechtspraak-1.0");
 
-        $decision = [];
         if ($verdicts->inhoudsindicatie) {
-            $decision = $this->xmlObjToArr($verdicts->inhoudsindicatie);
+            $xmlData['decision'] = $this->xmlObjToArr($verdicts->inhoudsindicatie);
         }
 
-        $verdict = [];
         if ($verdicts->uitspraak) {
-            $verdict = $this->xmlObjToArr($verdicts->uitspraak);
+            $xmlData['verdict'] = $this->xmlObjToArr($verdicts->uitspraak);
         }
 
         if (!empty($xmlData)) {
             if ($includeSource) {
                 $includeSource = $body;
             }
-            $resource = Resource\EcliMetaData::create($xmlData, $decision, $verdict, $includeSource);
+            $resource = Resource\EcliMetaData::create($xmlData, $includeSource);
         } else {
             $resource = false;
         }
@@ -148,13 +156,16 @@ class Client
 
     /**
      * @param string $uri
+     * @param bool $asSimpleXML
      * @return bool|\SimpleXMLElement
      */
     protected function getXmlBody(string $uri, $asSimpleXML = true)
     {
         $response = $this->client->get($uri);
 
-        if ($response->getStatusCode() !== 200 || $response->getHeaderLine('Content-Type') === 'text/html; charset=utf-8') {
+        if ($response->getStatusCode() !== 200 ||
+            $response->getHeaderLine('Content-Type') === 'text/html; charset=utf-8'
+        ) {
             return false;
         }
 
@@ -167,25 +178,26 @@ class Client
         return $body;
     }
 
-    public function xmlObjToArr($obj) {
+    public function xmlObjToArr($obj)
+    {
         $namespace = $obj->getDocNamespaces(true);
-        $namespace[NULL] = NULL;
+        $namespace[null] = null;
 
         $children = array();
         $attributes = array();
         $name = strtolower((string)$obj->getName());
 
-        $text = trim((string)$obj);
-        if( strlen($text) <= 0 ) {
-            $text = NULL;
+        $text = trim((string) $obj);
+        if (strlen($text) <= 0) {
+            $text = null;
         }
 
         // get info for all namespaces
-        if(is_object($obj)) {
-            foreach( $namespace as $ns=>$nsUrl ) {
-                // atributes
+        if (is_object($obj)) {
+            foreach ($namespace as $ns => $nsUrl) {
+                // attributes
                 $objAttributes = $obj->attributes($ns, true);
-                foreach( $objAttributes as $attributeName => $attributeValue ) {
+                foreach ($objAttributes as $attributeName => $attributeValue) {
                     $attribName = strtolower(trim((string)$attributeName));
                     $attribVal = trim((string)$attributeValue);
                     if (!empty($ns)) {
@@ -196,9 +208,9 @@ class Client
 
                 // children
                 $objChildren = $obj->children($ns, true);
-                foreach( $objChildren as $childName=>$child ) {
+                foreach ($objChildren as $childName => $child) {
                     $childName = strtolower((string)$childName);
-                    if( !empty($ns) ) {
+                    if (! empty($ns)) {
                         $childName = $ns.':'.$childName;
                     }
                     $children[$childName][] = $this->xmlObjToArr($child);
@@ -213,5 +225,4 @@ class Client
             'children' => $children,
         ];
     }
-
 }
