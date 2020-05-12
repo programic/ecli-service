@@ -44,7 +44,7 @@ class EcliMetaData
 
     private function getEcliOrganizationType($ecliValue)
     {
-        if (strpos($ecliValue, 'ECLI:NL:') === false) {
+        if (strpos($ecliValue, 'ECLI:NL:') !== 0) {
             return null;
         }
 
