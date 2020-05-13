@@ -98,7 +98,7 @@ class Client
     public function getEcliMetaData(string $ecliNumber, $metaOnly = false, $includeSource = false)
     {
         $metaParams = ($metaOnly) ? '&return=META' : '';
-        $body = $this->getXmlBody('content?id='. $ecliNumber . $metaParams, false);
+        $body = $this->getXmlBody('content?id=' . $ecliNumber . $metaParams, false);
         $body = simplexml_load_string($body);
 
         if ($body === false) {
@@ -109,15 +109,23 @@ class Client
         if (!empty($body->children($namespaces['rdf']))) {
             $rdf = $body->children($namespaces['rdf'])->RDF;
             $xmlDescription = $rdf->Description[0];
+
+            if (isset($rdf->Description[1])) {
+                $xmlVerdictDescription = $rdf->Description[1];
+                $dcVerdictTerms = $xmlVerdictDescription->children($namespaces['dcterms']);
+            }
         }
 
         $dcTerms = $xmlDescription->children($namespaces['dcterms']);
 
 
-        $xmlData = (array) $dcTerms;
-        $xmlDataPsi = (array) $xmlDescription->children($namespaces['psi']);
-        $versions = (array) $dcTerms->hasVersion->children($namespaces['rdf'])->list->li;
+        $xmlData = (array)$dcTerms;
+        $xmlDataPsi = (array)$xmlDescription->children($namespaces['psi']);
+        $versions = (array)$dcTerms->hasVersion->children($namespaces['rdf'])->list->li;
         $xmlData = array_merge($xmlData, $xmlDataPsi, ['versions' => $versions]);
+        if (isset($dcVerdictTerms->issued)) {
+            $xmlData['publicationDate'] = $dcVerdictTerms->issued;
+        }
 
         $verdicts = $body->children("http://www.rechtspraak.nl/schema/rechtspraak-1.0");
 

@@ -9,6 +9,11 @@ class EcliMetaData
 
     public function __construct(array $data, $source)
     {
+        if (isset($data['zaaknummer'])) {
+            $data['casenumber'] = $data['zaaknummer'];
+            unset($data['zaaknummer']);
+        }
+
         $this->data = (array) $data;
         $this->data['source'] = $source;
         $this->data['creatorAbbreviation'] = $this->getEcliOrganizationType($this->identifier);
