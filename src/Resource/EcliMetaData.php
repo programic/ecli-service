@@ -10,7 +10,7 @@ class EcliMetaData
     public function __construct(array $data, $source)
     {
         if (isset($data['zaaknummer'])) {
-            $data['casenumber'] = $data['zaaknummer'];
+            $data['caseNumber'] = $data['zaaknummer'];
             unset($data['zaaknummer']);
         }
 
