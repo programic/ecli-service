@@ -7,7 +7,7 @@ class EcliMetaData
     protected $data = [];
     protected $source = null;
 
-    public function __construct(array $data, $source)
+    public function __construct(array $data = [], $source = null)
     {
         if (isset($data['zaaknummer'])) {
             $data['caseNumber'] = $data['zaaknummer'];
@@ -26,9 +26,17 @@ class EcliMetaData
         return new self($element, $source);
     }
 
+    public static function fromCache(array $data)
+    {
+        $instance = new self;
+        $instance->data = $data;
+
+        return $instance;
+    }
+
     public function __get($name)
     {
-        return $this->data[$name];
+        return $this->data[$name] ?? null;
     }
 
     public function __set($name, $value)
@@ -38,13 +46,18 @@ class EcliMetaData
 
     public function toArray()
     {
-        return array_map(function ($value) {
+        return $this->toArrayRecursive($this->data);
+    }
+
+    private function toArrayRecursive($data)
+    {
+         return array_map(function ($value) {
             if (is_array($value)) {
-                return $value;
+                return $this->toArrayRecursive($value);
             }
 
             return (string) $value;
-        }, $this->data);
+        }, $data);
     }
 
     private function getEcliOrganizationType($ecliValue)
