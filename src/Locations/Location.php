@@ -79,12 +79,14 @@ class Location
                     if ($result1 = $this->submitVindplaatsRechtSpraak("Edit", $data)) {
                         switch ($result1['type']) {
                             case "error":
+                                dd('deze4');
                                 throw new LocationErrorException($result1['message']);
                                 break;
                             case "info":
                                 return true;
                                 break;
                             default:
+                                dd('deze3');
                                 throw new LocationErrorException("Unknown error");
                                 break;
                         }
@@ -95,10 +97,12 @@ class Location
                     return true;
                     break;
                 default:
+                    dd('deze1');
                     throw new LocationErrorException("Unknown error");
                     break;
             }
         } else {
+            dd('deze2');
             throw new LocationErrorException("Unknown error");
         }
 
@@ -146,24 +150,32 @@ class Location
 
         $date = date("Y-m-d");
         $base64rand = base64_encode(sha1(mt_rand()));
+        if (is_array($data['auteurs']) === false) {
+            $data['auteurs'] = [$data['auteurs']];
+        }
+        $data['auteurs'] = array_filter($data['auteurs']);
+        foreach ($data['auteurs'] as $key => $name) {
+            $data['auteurs'][$key] = "<vin:Naam><![CDATA[" . $name . "]]></vin:Naam>";
+        }
+        $authorsSoap = implode("\n", $data['auteurs']);
 
         $soapData = "<?xml version=\"1.0\"?>
-<soapenv:Envelope 
-    xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" 
+<soapenv:Envelope
+    xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"
     xmlns:vin=\"http://www.rechtspraak.nl/npi/service/ecli/vindplaatsservice\">
 <soapenv:Header>
-    <wsse:Security 
-        soapenv:mustUnderstand=\"1\" 
+    <wsse:Security
+        soapenv:mustUnderstand=\"1\"
         xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\">
-      <wsse:UsernameToken 
-        wsu:Id=\"UsernameToken-1\" 
+      <wsse:UsernameToken
+        wsu:Id=\"UsernameToken-1\"
         xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\">
         <wsse:Username>" . $this->credentials['username'] ."</wsse:Username>
-        <wsse:Password 
+        <wsse:Password
             Type=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText\">
             " . $this->credentials['password'] . "
         </wsse:Password>
-        <wsse:Nonce 
+        <wsse:Nonce
             EncodingType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary\">
                 " . $base64rand . "
         </wsse:Nonce>
@@ -178,7 +190,7 @@ class Location
             <vin:Ecli>" . $data['ecli'] . "</vin:Ecli>
             <vin:Annotators>
                <vin:Annotator>
-                  <vin:Naam><![CDATA[" . $data['auteurs'] . "]]></vin:Naam>
+                  " . $authorsSoap . "
                </vin:Annotator>
             </vin:Annotators>
             <vin:Url>" . $data['url'] . "</vin:Url>
@@ -191,7 +203,7 @@ class Location
             return $this->checkRechtspraakResponse($result);
         }
 
-        throw new LocationErrorException("Unknown error");
+        throw new LocationErrorException("403 Forbidden");
     }
 
     private function sendSoapRequest($service, $action, $soapData, $timeout = 10)
