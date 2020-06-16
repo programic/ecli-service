@@ -51,7 +51,7 @@ class EcliMetaData
 
     private function toArrayRecursive($data)
     {
-         return array_map(function ($value) {
+        return array_map(function ($value) {
             if (is_array($value)) {
                 return $this->toArrayRecursive($value);
             }

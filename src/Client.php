@@ -6,7 +6,7 @@ use GuzzleHttp\Client as GuzzleClient;
 
 class Client
 {
-    protected $client = null;
+    public $client = null;
     protected $baseUrl = 'https://data.rechtspraak.nl/uitspraken/';
 
     /**
