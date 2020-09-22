@@ -6,6 +6,15 @@ use GuzzleHttp\Client;
 use Programic\EcliService\Locations\Exceptions\LocationErrorException;
 use Programic\EcliService\Locations\Exceptions\LocationValidationException;
 
+/**
+ * Class Location
+ * @package Programic\EcliService\Locations
+ *
+ * @method sync(array $data)
+ * @method add(array $data)
+ * @method edit(array $data)
+ * @method delete(array $data)
+ */
 class Location
 {
     private $client;
@@ -62,7 +71,7 @@ class Location
             $this->{$method}($arguments[0]);
         }
 
-        throw new LocationErrorException('Static call unknown');
+        throw new LocationErrorException('Method not found');
     }
 
     /**
@@ -79,14 +88,12 @@ class Location
                     if ($result1 = $this->submitVindplaatsRechtSpraak("Edit", $data)) {
                         switch ($result1['type']) {
                             case "error":
-                                dd('deze4');
                                 throw new LocationErrorException($result1['message']);
                                 break;
                             case "info":
                                 return true;
                                 break;
                             default:
-                                dd('deze3');
                                 throw new LocationErrorException("Unknown error");
                                 break;
                         }
@@ -97,12 +104,10 @@ class Location
                     return true;
                     break;
                 default:
-                    dd('deze1');
                     throw new LocationErrorException("Unknown error");
                     break;
             }
         } else {
-            dd('deze2');
             throw new LocationErrorException("Unknown error");
         }
 
