@@ -165,46 +165,37 @@ class Location
         $authorsSoap = implode("\n", $data['auteurs']);
 
         $soapData = "<?xml version=\"1.0\"?>
-<soapenv:Envelope
-    xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"
-    xmlns:vin=\"http://www.rechtspraak.nl/npi/service/ecli/vindplaatsservice\">
+<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:vin=\"http://www.rechtspraak.nl/npi/service/ecli/vindplaatsservice\">
 <soapenv:Header>
-    <wsse:Security
-        soapenv:mustUnderstand=\"1\"
-        xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\">
-      <wsse:UsernameToken
-        wsu:Id=\"UsernameToken-1\"
-        xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\">
-        <wsse:Username>" . $this->credentials['username'] ."</wsse:Username>
-        <wsse:Password
-            Type=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText\">
-            " . $this->credentials['password'] . "
-        </wsse:Password>
-        <wsse:Nonce
-            EncodingType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary\">
-                " . $base64rand . "
-        </wsse:Nonce>
-        <wsu:Created>" . $date . "</wsu:Created>
-      </wsse:UsernameToken>
-    </wsse:Security>
-  </soapenv:Header>
-   <soapenv:Body>
-       <vin:" . $action . ">
-         <vin:request>
-            <vin:Vindplaats>" . $data['location'] . "</vin:Vindplaats>
-            <vin:Ecli>" . $data['ecli'] . "</vin:Ecli>
-            <vin:Annotators>
-               <vin:Annotator>
-                  " . $authorsSoap . "
-               </vin:Annotator>
-            </vin:Annotators>
-            <vin:Url>" . $data['url'] . "</vin:Url>
-         </vin:request>
-      </vin:" . $action . ">
-   </soapenv:Body>
+<wsse:Security soapenv:mustUnderstand=\"1\" xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\">
+<wsse:UsernameToken
+wsu:Id=\"UsernameToken-1\"
+xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\">
+<wsse:Username>".$this->credentials['username']."</wsse:Username>
+<wsse:Password Type=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText\">".$this->credentials['password']."</wsse:Password>
+<wsse:Nonce EncodingType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary\">".$base64rand."</wsse:Nonce>
+<wsu:Created>" . $date . "</wsu:Created>
+</wsse:UsernameToken>
+</wsse:Security>
+</soapenv:Header>
+<soapenv:Body>
+<vin:" . $action . ">
+<vin:request>
+<vin:Vindplaats>" . $data['location'] . "</vin:Vindplaats>
+<vin:Ecli>" . $data['ecli'] . "</vin:Ecli>
+<vin:Annotators>
+<vin:Annotator>
+" . $authorsSoap . "
+</vin:Annotator>
+</vin:Annotators>
+<vin:Url>" . $data['url'] . "</vin:Url>
+</vin:request>
+</vin:" . $action . ">
+</soapenv:Body>
 </soapenv:Envelope>";
 
-        if ($result = $this->sendSoapRequest($service, $endpoint, $soapData)) {
+        $result = $this->sendSoapRequest($service, $endpoint, $soapData);
+        if ($result) {
             return $this->checkRechtspraakResponse($result);
         }
 
@@ -228,18 +219,21 @@ class Location
         curl_setopt($soap_do, CURLOPT_TIMEOUT, $timeout);
         curl_setopt($soap_do, CURLOPT_VERBOSE, true);
         curl_setopt($soap_do, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($soap_do, CURLOPT_HEADER, 1);
         curl_setopt($soap_do, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($soap_do, CURLOPT_SSL_VERIFYHOST, false);
         curl_setopt($soap_do, CURLOPT_POST, true);
         curl_setopt($soap_do, CURLOPT_POSTFIELDS, $soapData);
         curl_setopt($soap_do, CURLOPT_HTTPHEADER, $header);
-        $result = curl_exec($soap_do);
+        $response = curl_exec($soap_do);
+        $header_size = curl_getinfo($soap_do, CURLINFO_HEADER_SIZE);
         curl_close($soap_do);
 
+        $header = substr($response, 0, $header_size);
+        $body = substr($response, $header_size);
 
-        return $result;
+        return $body;
     }
-
 
     private function checkRechtspraakResponse($xml)
     {
