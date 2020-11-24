@@ -182,12 +182,15 @@ xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-u
 <vin:" . $action . ">
 <vin:request>
 <vin:Vindplaats>" . $data['location'] . "</vin:Vindplaats>
-<vin:Ecli>" . $data['ecli'] . "</vin:Ecli>
-<vin:Annotators>
-<vin:Annotator>
-" . $authorsSoap . "
-</vin:Annotator>
-</vin:Annotators>
+<vin:Ecli>" . $data['ecli'] . "</vin:Ecli>";
+        if ($authorsSoap) {
+            $soapData .= "<vin:Annotators>
+               <vin:Annotator>
+                  " . $authorsSoap . "
+               </vin:Annotator>
+            </vin:Annotators>";
+        }
+        $soapData .= "
 <vin:Url>" . $data['url'] . "</vin:Url>
 </vin:request>
 </vin:" . $action . ">
