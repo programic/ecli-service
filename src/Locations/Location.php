@@ -58,7 +58,7 @@ class Location
 
         $method = $method.'Soap';
         if (method_exists($class, $method)) {
-            $class->{$method}($arguments[0]);
+            return $class->{$method}($arguments[0]);
         }
 
         throw new LocationErrorException('Static call unknown');
@@ -68,10 +68,10 @@ class Location
     {
         $method = $method.'Soap';
         if (method_exists($this, $method)) {
-            $this->{$method}($arguments[0]);
+            return $this->{$method}($arguments[0]);
         }
 
-        throw new LocationErrorException('Method not found');
+        throw new LocationErrorException('Method not found: ' . $method);
     }
 
     /**
@@ -84,6 +84,11 @@ class Location
         if ($result = $this->submitVindplaatsRechtSpraak("Add", $data)) {
             switch ($result['type']) {
                 case "error":
+                    $possibleErrorMessage = 'De opgegeven URL begint niet met de in de positieve lijst vermelde URL';
+                    if (strpos($result['message'], $possibleErrorMessage) !== false) {
+                        throw new LocationErrorException($result['message']);
+                    }
+
                     // On error, maybe the location already exists, so we try to update
                     if ($result1 = $this->submitVindplaatsRechtSpraak("Edit", $data)) {
                         switch ($result1['type']) {
