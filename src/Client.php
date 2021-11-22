@@ -121,7 +121,11 @@ class Client
 
         $xmlData = (array)$dcTerms;
         $xmlDataPsi = (array)$xmlDescription->children($namespaces['psi']);
-        $versions = (array)$dcTerms->hasVersion->children($namespaces['rdf'])->list->li;
+        try {
+            $versions = (array) $dcTerms->hasVersion->children($namespaces['rdf'])->list->li ?? [];
+        } catch (\Throwable $e) {
+            $versions = [];
+        }
         $xmlData = array_merge($xmlData, $xmlDataPsi, ['versions' => $versions]);
         if (isset($dcVerdictTerms->issued)) {
             $xmlData['publicationDate'] = $dcVerdictTerms->issued;
